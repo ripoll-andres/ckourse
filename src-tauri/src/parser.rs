@@ -2549,6 +2549,62 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
     }
 
+    /// Attachment file names of each lesson, in lesson order.
+    fn attachment_names(section: &ParsedSection) -> Vec<Vec<&str>> {
+        section
+            .lessons
+            .iter()
+            .map(|l| l.resources.iter().map(|r| r.path.rsplit(['/', '\\']).next().unwrap()).collect())
+            .collect()
+    }
+
+    // Attachments in a three-level section follow the same rules as at the top:
+    // same lesson number, same base name, and orphan PDFs go to the lesson before.
+    const DEEP_FILES: [&str; 5] = [
+        "001 Setup.mp4",
+        "001 App-worksheet.pdf",
+        "002 Deploy.mp4",
+        "002 Deploy.pdf",
+        "003 Syllabus.pdf",
+    ];
+
+    fn assert_deep_attachments(course: &ParsedCourse) {
+        assert_eq!(section_titles(course), vec!["Intro", "Module — Group — Topic"]);
+        assert_eq!(
+            attachment_names(&course.sections[1]),
+            vec![vec!["001 App-worksheet.pdf"], vec!["002 Deploy.pdf", "003 Syllabus.pdf"]]
+        );
+    }
+
+    #[test]
+    fn remote_attachments_match_lessons_in_deep_sections() {
+        let topic = remote_folder("01 Topic", DEEP_FILES.iter().map(|n| remote_file(n)).collect());
+        let children = vec![
+            remote_folder("00 Intro", vec![remote_file("01 Hello.mp4")]),
+            remote_folder("01 Module", vec![remote_folder("01 Group", vec![topic])]),
+        ];
+        let course = parse_source_tree("Deep", children, "srv:srv-1:/Course").unwrap();
+        assert_deep_attachments(&course);
+    }
+
+    #[test]
+    fn parse_folder_attachments_match_lessons_in_deep_sections() {
+        use std::fs;
+
+        let dir = std::env::temp_dir().join("ckourse_test_nested_attachments");
+        let _ = fs::remove_dir_all(&dir);
+        touch(&dir.join("00 Intro").join("01 Hello.mp4"));
+        let topic = dir.join("01 Module").join("01 Group").join("01 Topic");
+        for name in DEEP_FILES {
+            touch(&topic.join(name));
+        }
+
+        let result = parse_folder(&dir).unwrap();
+        assert_deep_attachments(&result);
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
     #[test]
     fn parse_folder_existing_patterns_unchanged() {
         use std::fs;
