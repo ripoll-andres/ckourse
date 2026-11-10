@@ -22,7 +22,7 @@ Import a course from a local folder, Google Drive, or your own server. Ckourse w
 >
 > Upstream reads videos at most two folder levels below the course folder, and anything deeper is skipped without a warning. In this fork, every folder that holds videos becomes a section titled after its path (`Module — Part — Topic`). This applies to local folders, Google Drive and self-hosted servers (SFTP, WebDAV, S3). The change is limited to `src-tauri/src/parser.rs` and is covered by the parser tests.
 >
-> There are no prebuilt installers here: [build from source](#building-from-source). A build of this fork keeps upstream's auto-updater, so accepting an update installs the official release, which does not include this change.
+> A Windows installer is on the [Releases](https://github.com/ripoll-andres/ckourse/releases) page; other platforms can [build from source](#building-from-source). The auto-updater is off in this fork: it points at this repository, which publishes no update manifest, so the app never offers the official release (which lacks this change). To update, download the next installer by hand.
 
 ## Why Ckourse
 
